@@ -1,0 +1,67 @@
+<script type="text/javascript">
+  RED.nodes.registerType("pid-complete", {
+    category: "PID",
+    color: "#FFCC66",
+    defaults: {
+      name: { value: "" },
+      sampleInterval: { value: 1 },
+      outMin: { value: 0 },
+      outMax: { value: 1 },
+      kp: { value: 1 },
+      ki: { value: 0.01 },
+      kd: { value: 0 },
+      sp: { value: 100 },
+      bumpPercent: { value: 1 },
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-sliders",
+    outputLabels: [],
+    label: function () {
+      return this.name || "pid-complete";
+    },
+  });
+</script>
+
+<script type="text/html" data-template-name="pid-complete">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-sampleInterval">Calculation Interval (s)</label>
+    <input type="text" id="node-input-sampleInterval" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-outMin">Minimum Output Value</label>
+    <input type="text" id="node-input-outMin" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-outMax">Maximum Output Value</label>
+    <input type="text" id="node-input-outMax" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-kp">Proportional Gain</label>
+    <input type="text" id="node-input-kp" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-ki">Integral Gain</label>
+    <input type="text" id="node-input-ki" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-kd">Derivative Gain</label>
+    <input type="text" id="node-input-kd" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-sp">Setpoint</label>
+    <input type="text" id="node-input-sp" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-bumpPercent">Autotune Hysteresis Percent</label>
+    <input type="text" id="node-input-bumpPercent" style="width:70%;" />
+  </div>
+</script>
+
+<script type="text/html" data-help-name="pid-complete">
+  <p>A node to performe PID calculations and autotuning.</p>
+</script>
