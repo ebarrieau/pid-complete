@@ -11,6 +11,8 @@
       ki: { value: 0.01 },
       kd: { value: 0 },
       sp: { value: 100 },
+      PonM: { value: false },
+      DonM: { value: false },
       bumpPercent: { value: 1 },
     },
     inputs: 1,
@@ -55,6 +57,14 @@
   <div class="form-row">
     <label for="node-input-sp">Setpoint</label>
     <input type="text" id="node-input-sp" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-PonM">Proportional on Measurement</label>
+    <input type="checkbox" id="node-input-PonM" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-DonM">Derivative on Measurement</label>
+    <input type="checkbox" id="node-input-PonD" style="width:70%;" />
   </div>
   <div class="form-row">
     <label for="node-input-bumpPercent">Autotune Hysteresis Percent</label>
