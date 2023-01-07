@@ -13,7 +13,7 @@ const FINISH = Symbol();
 const OFF = Symbol();
 
 const _tuning_rules = {
-    "pid": [0.6, 0.5, .125],
+    "pid": [0.6, 0.5, 0.125],
     "pi": [0.45, 0.8333, 0],
     "pd": [0.8, 0, 0.125],
     "pessen-integral": [0.7, 0.4, 0.15],
