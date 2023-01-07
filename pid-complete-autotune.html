@@ -1,0 +1,69 @@
+<script type="text/javascript">
+  RED.nodes.registerType("pid-complete-autotune", {
+    category: "PID",
+    color: "#FFCC66",
+    defaults: {
+      name: { value: "PID Autotune" },
+      outDec: { value: 0 },
+      outInc: { value: 1 },
+      disabledOut: {value: 0},
+      rule: {value: "pid"},
+      after: {value: "disable"},
+      stepPercent: {value: 1}
+    },
+    inputs: 1,
+    outputs: 1,
+    icon: "font-awesome/fa-sliders",
+    outputLabels: [],
+    label: function () {
+      return this.name || "pid-complete";
+    },
+  });
+</script>
+
+<script type="text/html" data-template-name="pid-complete-autotune">
+  <div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-input-name" placeholder="Name" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-outDec">Output PV - Decreasing SP</label>
+    <input type="text" id="node-input-outDec" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-outInc">Output PV - Increasing SP</label>
+    <input type="text" id="node-input-outInc" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-disabledOut">Output When Disabled</label>
+    <input type="text" id="node-input-disabledOut" style="width:70%;" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-rule"><i class="fa fa-list"></i>Tuning Rule</label>
+    <select id="node-input-rule" style="width:150px">
+        <option value="pid">Ziegler-Nichols PID</option>
+        <option value="pi">Ziegler-Nichols PI</option>
+        <option value="pd">Ziegler-Nichols PD</option>
+        <option value="pessen-integral">Pessen-Integral</option>
+        <option value="some-overshoot">Some Overshoot</option>
+        <option value="no-overshoot">No Overshoot</option>
+    </select>
+  </div>
+  <div class="form-row">
+      <label for="node-input-after"><i class="fa fa-list"></i>State afer Tuning</label>
+      <select id="node-input-after" style="width:150px">
+          <option value="disable">Disabled</option>
+          <option value="manual">Manual</option>
+          <option value="auto">Auto</option>
+          <option value="previous">Previous Setting</option>
+      </select>
+  </div>
+  <div class="form-row">
+    <label for="node-input-stepPercent">Autotune Bump Percent (%)</label>
+    <input type="text" id="node-input-stepPercent" style="width:70%;" />
+  </div>
+</script>
+
+<script type="text/html" data-help-name="pid-complete">
+  <p>A node to perform PID autotuning integration with the PID Comlete node.</p>
+</script>

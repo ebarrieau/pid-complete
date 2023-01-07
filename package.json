@@ -1,8 +1,7 @@
 {
   "name": "node-red-contrib-pid-complete",
-  "version": "1.0.0",
+  "version": "0.2.3",
   "description": "A complete Node Red PID implementation.",
-  "main": "pid-complete.js",
   "scripts": {
     "test": ""
   },
@@ -10,7 +9,8 @@
   "license": "MIT",
   "node-red" : {
     "nodes": {
-        "pid-complete": "pid-complete.js"
+        "pid-complete": "pid-complete.js",
+        "pid-complete-autotune": "pid-complete-autotune.js"
     }
 }
 
