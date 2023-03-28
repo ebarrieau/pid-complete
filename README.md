@@ -1,6 +1,6 @@
 # node-red-contrib-pid-complete
 
-A node-red node to performe PID Calculations
+A node-red node to perform PID Calculations.
 
 # Getting started
 
@@ -8,20 +8,20 @@ This node is under active development and may have lots of bugs and breaking cha
 
 ## pid-complete node
 
-This node implements a PID controller that is easy to implement into your flow, but gives you enough options to control complex systems. This implementation uses the parallel (ideal) form of the PID equation instead of the classical form. This means that the system uses three gains (kp, ki, and kd) as opposed to one gain and two times (kp, ti, and td) - this is a design choice of this library.
+This node is a PID controller that is easy to implement into your flow, but gives you enough options to control complex systems. This implementation uses the parallel (ideal) form of the PID equation instead of the classical form. This means that the system uses three gains (kp, ki, and kd) as opposed to one gain and two times (kp, ti, and td) - this is a design choice of this library.
 
 The setpoint and PID gains are not saved across restarts, so you must initialize these variables in your flow before starting the node or you will get an error.
 
-### Input
+### Inputs
 
-1. `msg.payload` - must contain the input process variable (PV) unless a command is send.
+1. `msg.payload` - must contain the input process variable (PV) unless a command is send or valid topic is set.
 2. `msg.cmd` - can contain **reset**, **disable**, **auto**, or **manual**.
 3. `msg.topic` - can contain no topic or **sp** with the new setpoint in the `msg.payload`, **kp** with the new proportional gain in `msg.payload`, **ki** with the new integral gain in `msg.payload`, or **kd** with the new derivative gain in `msg.payload`.
 
 ### Output
 
 1. `msg.topic` - contains the name of the node.
-2. `msg.payload` - contains the output setpoint if in Auto or Manual.
+2. `msg.payload` - contains the output value if in **auto** or **manual**.
 3. `msg.proportional` - contains the output of the last proportional calculation.
 4. `msg.integral` - contains the output of the last integral calculation.
 5. `msg.derivative` - contains the output of the last derivative calculation.
@@ -30,13 +30,28 @@ The setpoint and PID gains are not saved across restarts, so you must initialize
 
 | Setting                       | Description                                                                      |
 | ----------------------------- | ---------------------------------------------------------------------------------|
-| `Name`                        | Whatever you name the node. Will be used as topic of node output.               |
-| `Calculation Interval`        | Time between calculations. If set faster than inject interval, node will calculate new input on every inject. If set slower than inject interval, node will wait until next inject after calculation interval has elapsed. Set this long if changing the control output quickly would damage the system (e.g. valve packing wearing out from quick control oscillations)    |
-| `Max Output - Decreasing PV`  | Sets the largest control ouput that produces a decreasing PV.                    |
-| `Max Output - Increasing PV`  | Sets the largest control output that produces an increasing PV.                  |
-| `Output When Disabled`        | Default control output when in Disabled mode.                                    |
-| `Proportional on Measurement` | Calculates proportional term from measurement instead of from error.             |
-| `Derivative on Measurement`   | Calculates derivative term from measurement instead of from error.               |
+| *Name*                        | Whatever you name the node. Will be used as topic of node output.               |
+| *Calculation Interval*        | Time between calculations. If set faster than inject interval, node will calculate new input on every inject. If set slower than inject interval, node will wait until next inject after calculation interval has elapsed. Set this long if changing the control output quickly would damage the system (e.g. valve packing wearing out from quick control oscillations)    |
+| *Max Output - Decreasing PV*  | Sets the largest control ouput that produces a decreasing PV.                    |
+| *Max Output - Increasing PV*  | Sets the largest control output that produces an increasing PV.                  |
+| *Output When Disabled*        | Default control output when in Disabled mode.                                    |
+| *Proportional on Measurement* | Calculates proportional term from measurement instead of from error.             |
+| *Derivative on Measurement*   | Calculates derivative term from measurement instead of from error.               |
+
+<details>
+<summary>Advanced Details</summary>
+
+When setting `msg.cmd` to **manual**, you can either include the desired manual output to `msg.payload` or you can leave it empty which will set the manual output to the last output. The last output value is either the last calculated PID value when in **auto** mode or *Output When Disabled* when in **disable** mode.
+
+When setting `msg.cmd` to **auto** when currently in **manual**, the manual output will be set into the integral term to provide bumpless transition. If `msg.cmd` is set to **auto** while currently in **auto** mode, the integral term will not be reset. THe only way to reset the integral term is to either set `msg.cmd` to **reset** or cycle the node into **disable** then back to **auto** which will reset the integral term to *Output When Disabled*. To change the manual setpoint, you must resend `msg.cmd` with **manual** and the desired output in `msg.payload`.
+
+Setting `msg.cmd` to **reset** will reset the integral term, but will not change the current mode.
+
+Note that the Proportional, Integral, and Derivative outputs only send values when in **auto** mode. You do not need to keep track of these values, but they can be useful for visualization and tuning purposes.
+
+For many applications, including heating applications, *Max Output - Decreasing PV* will be set to 0 and *Max Output - Increasing PV* will be set to the maximum safe output value. For other applications, including cooling applications, the *Max Output - Increasing PV* will be 0 and *Max Output - Decreasing PV* will be the maximum safe output value. For applications that heat and cool, it is common to set a positive and negative range centered at 0. In this case you would separate the positive from negative value outside of the PID node.
+
+</details>
 
 ## pid-complete-autotune node
 
@@ -97,4 +112,4 @@ I will probably approve it ;)
 
 # Credits
 
-Special thanks to Martin Lundberg https://github.com/m-lundberg/simple-pid and Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library who's work this library is based on.
+Special thanks to Martin Lundberg https://github.com/m-lundberg/simple-pid and Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library and https://github.com/br3ttb/Arduino-PID-AutoTune-Library who's work this library is based on.
