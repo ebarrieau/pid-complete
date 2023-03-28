@@ -1,0 +1,563 @@
+[
+    {
+        "id": "50aa39e879f6077c",
+        "type": "tab",
+        "label": "Simple Chiller Example - w/ Graphing",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "8dc0743a75ae817e",
+        "type": "pid-complete",
+        "z": "50aa39e879f6077c",
+        "name": "Chiller PID",
+        "sampleInterval": 1,
+        "outMin": "100",
+        "outMax": "0",
+        "disabledOut": "0",
+        "PonM": false,
+        "x": 550,
+        "y": 540,
+        "wires": [
+            [
+                "6f60b63f60e97419",
+                "acd53aeae534fdcf",
+                "5f8b40c5c75aca10"
+            ]
+        ]
+    },
+    {
+        "id": "c25c49a1b221ee57",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "0.1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "temperature",
+        "payloadType": "global",
+        "x": 140,
+        "y": 540,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ],
+        "info": "This is just inserting the current temp on a regular basis. It is pulling the current temp from a global variable which is set in simulation calculation function block."
+    },
+    {
+        "id": "ce8bcd99806ce0be",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "Kp",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "kp",
+        "payload": "1.2624623958370804",
+        "payloadType": "num",
+        "x": 170,
+        "y": 80,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ]
+    },
+    {
+        "id": "7f36fd8027f44ff8",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "Ki",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "ki",
+        "payload": "0.05339970162264132",
+        "payloadType": "num",
+        "x": 170,
+        "y": 120,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ]
+    },
+    {
+        "id": "5b1e0db07d94d60d",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "Kd",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "kd",
+        "payload": "7.461705086695323",
+        "payloadType": "num",
+        "x": 170,
+        "y": 160,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ]
+    },
+    {
+        "id": "9be913d3616bf2c4",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "SP",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "setpoint",
+        "payload": "30",
+        "payloadType": "num",
+        "x": 170,
+        "y": 200,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ]
+    },
+    {
+        "id": "6f60b63f60e97419",
+        "type": "function",
+        "z": "50aa39e879f6077c",
+        "name": "Oversimplified Chilled Kettle",
+        "func": "let currentTemp = context.get(\"currentTemp\");\nlet currentPower = context.get(\"currentPower\");\nlet outterV = context.get(\"outterV\");\nlet outterSA = context.get(\"outterSA\");\nlet lastTime = context.get(\"lastTime\") || Date.now();\n\nlet ambientTemp = 10;\n\nlet now = Date.now();\nlet dT = (now - lastTime) / 1000; //seconds\n\nlet powerLostAmbient = 100 * outterSA * (currentTemp - ambientTemp);\nlet netPower = 3000 - currentPower - powerLostAmbient;\n\nlet outletTemp = currentTemp + (netPower * dT) / (4.184 * outterV);\n\nif (msg.hasOwnProperty(\"payload\")) {\n    let tempPower = parseFloat(msg.payload);\n    if (!isNaN(tempPower)) currentPower = (Math.abs(tempPower) / 100) * 10000; //100% power - 5000 W\n}\n\nlet outletMsg = {\n    payload: outletTemp\n};\n\n\noutletTemp = outletTemp > 100 ? 100 : outletTemp; //limit to boiling range\n\ncontext.set(\"currentTemp\", outletTemp);\ncontext.set(\"currentPower\", currentPower);\ncontext.set(\"lastTime\", now);\n\nreturn outletMsg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\n//surface area of pot of water\nlet outterV = 2000; //mL\nlet outterR = 1.5; //cm\nlet outterSA = 2 * (Math.PI * Math.pow(outterR, 3) + outterV) / outterR; //surface area of cylinder, cm3\noutterSA = outterSA / 10000; //cm2 to m2\n\ncontext.set(\"outterSA\", outterSA);\ncontext.set(\"outterV\", outterV);\n\ncontext.set(\"currentTemp\", 40); //°C\ncontext.set(\"currentPower\", 0); //percent",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 540,
+        "wires": [
+            [
+                "130739aaab1bdfbb",
+                "85dd3cbd7055354e",
+                "53371e98bc12c49b"
+            ]
+        ]
+    },
+    {
+        "id": "a2a99b09f01b35cd",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "Auto",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "auto",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": ".5",
+        "topic": "",
+        "x": 170,
+        "y": 300,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ]
+    },
+    {
+        "id": "acd53aeae534fdcf",
+        "type": "debug",
+        "z": "50aa39e879f6077c",
+        "name": "Power",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "803d6437a38bcb44",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "Manual",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "manual",
+                "vt": "str"
+            },
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "0.2",
+        "topic": "",
+        "payload": "50",
+        "payloadType": "num",
+        "x": 170,
+        "y": 340,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ]
+    },
+    {
+        "id": "16d134fb0eb590ee",
+        "type": "pid-complete-autotune",
+        "z": "50aa39e879f6077c",
+        "name": "PID Autotune",
+        "outDec": "-100",
+        "outInc": "0",
+        "disabledOut": 0,
+        "rule": "pid",
+        "after": "auto",
+        "stepPercent": "10",
+        "x": 370,
+        "y": 540,
+        "wires": [
+            [
+                "8dc0743a75ae817e"
+            ]
+        ],
+        "info": "PID autotune settings need to match the settings in the PID node."
+    },
+    {
+        "id": "418ac2227b14777e",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "Autotune",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "autotune",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "0.2",
+        "topic": "",
+        "x": 160,
+        "y": 440,
+        "wires": [
+            [
+                "16d134fb0eb590ee"
+            ]
+        ]
+    },
+    {
+        "id": "130739aaab1bdfbb",
+        "type": "change",
+        "z": "50aa39e879f6077c",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "temperature",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1080,
+        "y": 540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1b524f2a1de5f5d8",
+        "type": "inject",
+        "z": "50aa39e879f6077c",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "20",
+        "payloadType": "num",
+        "x": 870,
+        "y": 480,
+        "wires": [
+            [
+                "130739aaab1bdfbb"
+            ]
+        ]
+    },
+    {
+        "id": "b03e6c06f7b2c3a3",
+        "type": "comment",
+        "z": "50aa39e879f6077c",
+        "name": "Mandatory Settings",
+        "info": "Kp, Ki, Kd, and SP must be set every time the node is started before the Auto PID function can be activated.",
+        "x": 190,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "32532dfb2b9369e6",
+        "type": "comment",
+        "z": "50aa39e879f6077c",
+        "name": "Commands",
+        "info": "Manual, Auto, and Disable control the PID function.",
+        "x": 170,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "4223221d051145fd",
+        "type": "comment",
+        "z": "50aa39e879f6077c",
+        "name": "Autotune",
+        "info": "Autotune starts the autotuning function, which sets the PID into Manual control and runs the autotune.",
+        "x": 160,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "fa99e81c37270d6c",
+        "type": "comment",
+        "z": "50aa39e879f6077c",
+        "name": "Send in Temp",
+        "info": "PV (temperature in this example) needs to be sent into the PID at a regular interval.",
+        "x": 168.99998474121094,
+        "y": 498.9999694824219,
+        "wires": []
+    },
+    {
+        "id": "3bac133a9fca03f5",
+        "type": "comment",
+        "z": "50aa39e879f6077c",
+        "name": "Initialize Temp",
+        "info": "Initializes the temperature global variable since this isn't a real sensor.",
+        "x": 850,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "85dd3cbd7055354e",
+        "type": "debug",
+        "z": "50aa39e879f6077c",
+        "name": "Temperature",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1050,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "378c90ab022fb547",
+        "type": "ui_chart",
+        "z": "50aa39e879f6077c",
+        "name": "",
+        "group": "3260ef8d8fd2a8b3",
+        "order": 3,
+        "width": 0,
+        "height": 0,
+        "label": "",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 1390,
+        "y": 720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8bc19a79c1170ea9",
+        "type": "rbe",
+        "z": "50aa39e879f6077c",
+        "name": "",
+        "func": "deadbandEq",
+        "gap": "0.1",
+        "start": "",
+        "inout": "out",
+        "septopics": true,
+        "property": "payload",
+        "topi": "topic",
+        "x": 1240,
+        "y": 720,
+        "wires": [
+            [
+                "378c90ab022fb547"
+            ]
+        ]
+    },
+    {
+        "id": "53371e98bc12c49b",
+        "type": "change",
+        "z": "50aa39e879f6077c",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Temp",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1050,
+        "y": 660,
+        "wires": [
+            [
+                "8bc19a79c1170ea9"
+            ]
+        ]
+    },
+    {
+        "id": "5f8b40c5c75aca10",
+        "type": "change",
+        "z": "50aa39e879f6077c",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "Power",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 750,
+        "y": 720,
+        "wires": [
+            [
+                "8bc19a79c1170ea9"
+            ]
+        ]
+    },
+    {
+        "id": "3260ef8d8fd2a8b3",
+        "type": "ui_group",
+        "name": "Default",
+        "tab": "2146c2b452331b3e",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "2146c2b452331b3e",
+        "type": "ui_tab",
+        "name": "Tab 1",
+        "icon": "dashboard",
+        "order": 1
+    }
+]

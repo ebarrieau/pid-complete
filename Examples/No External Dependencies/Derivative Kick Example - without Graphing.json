@@ -1,0 +1,476 @@
+[
+    {
+        "id": "9acdfaf1a6fa81fb",
+        "type": "tab",
+        "label": "Derivative Kick Example - w/o Graphing",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "a00fce670fc46323",
+        "type": "pid-complete",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Heater PID",
+        "sampleInterval": 1,
+        "outMin": 0,
+        "outMax": "100",
+        "disabledOut": "0",
+        "PonM": false,
+        "DonM": true,
+        "x": 550,
+        "y": 660,
+        "wires": [
+            [
+                "c204d9df754225e6",
+                "b9d5bbbf9452fcb0"
+            ]
+        ],
+        "info": "Output is +100 which signifies a heating PID."
+    },
+    {
+        "id": "eb2682007b3df4a6",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "0.1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "temperature",
+        "payloadType": "global",
+        "x": 140,
+        "y": 660,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ],
+        "info": "This is just inserting the current temp on a regular basis. It is pulling the current temp from a global variable which is set in simulation calculation function block."
+    },
+    {
+        "id": "5be392ee35aad173",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Kp",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "kp",
+        "payload": ".75",
+        "payloadType": "num",
+        "x": 170,
+        "y": 100,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "f605fa3b1376f9d8",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Ki",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "ki",
+        "payload": "0.00426",
+        "payloadType": "num",
+        "x": 170,
+        "y": 140,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "15e27418c368d401",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Kd",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "kd",
+        "payload": "8.2793",
+        "payloadType": "num",
+        "x": 170,
+        "y": 180,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "e56ae84465951025",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "SP - A",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "setpoint",
+        "payload": "50",
+        "payloadType": "num",
+        "x": 160,
+        "y": 280,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "c204d9df754225e6",
+        "type": "function",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Oversimplified Heated Kettle",
+        "func": "let currentTemp = context.get(\"currentTemp\");\nlet currentPower = context.get(\"currentPower\");\nlet outterV = context.get(\"outterV\");\nlet outterSA = context.get(\"outterSA\");\nlet lastTime = context.get(\"lastTime\") || Date.now();\n\nlet ambientTemp = 10;\n\nlet now = Date.now();\nlet dT = (now - lastTime) / 1000; //seconds\n\nlet powerLostAmbient = 100 * outterSA * (currentTemp - ambientTemp);\nlet netPower = currentPower - powerLostAmbient;\n\nlet outletTemp = currentTemp + (netPower * dT) / (4.184 * outterV);\n\nif (msg.hasOwnProperty(\"payload\")) {\n    let tempPower = parseFloat(msg.payload);\n    if (!isNaN(tempPower)) currentPower = (tempPower / 100) * 10000; //100% power - 5000 W\n}\n\nlet outletMsg = {\n    payload: outletTemp\n};\n\n\noutletTemp = outletTemp > 100 ? 100 : outletTemp; //limit to boiling range\n\ncontext.set(\"currentTemp\", outletTemp);\ncontext.set(\"currentPower\", currentPower);\ncontext.set(\"lastTime\", now);\n\nreturn outletMsg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\n//surface area of pot of water\nlet outterV = 2000; //mL\nlet outterR = 1.5; //cm\nlet outterSA = 2 * (Math.PI * Math.pow(outterR, 3) + outterV) / outterR; //surface area of cylinder, cm3\noutterSA = outterSA / 10000; //cm2 to m2\n\ncontext.set(\"outterSA\", outterSA);\ncontext.set(\"outterV\", outterV);\n\ncontext.set(\"currentTemp\", 45); //°C\ncontext.set(\"currentPower\", 0); //percent",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 660,
+        "wires": [
+            [
+                "d3e10d825e639224",
+                "6fca3f159ce8afab"
+            ]
+        ]
+    },
+    {
+        "id": "47fd560d535d0429",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Auto",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "auto",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": ".5",
+        "topic": "",
+        "x": 170,
+        "y": 420,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "1a034dc271c452aa",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Manual",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "manual",
+                "vt": "str"
+            },
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.2",
+        "topic": "",
+        "payload": "25",
+        "payloadType": "num",
+        "x": 160,
+        "y": 460,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "6a1f045eeeb9295c",
+        "type": "pid-complete-autotune",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "PID Autotune",
+        "outDec": 0,
+        "outInc": "100",
+        "disabledOut": 0,
+        "rule": "pid",
+        "after": "auto",
+        "stepPercent": "10",
+        "x": 370,
+        "y": 660,
+        "wires": [
+            [
+                "a00fce670fc46323"
+            ]
+        ],
+        "info": "PID autotune settings need to match settings in PID node."
+    },
+    {
+        "id": "c52f2b5c5f843247",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Autotune",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "autotune",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "0.2",
+        "topic": "",
+        "x": 160,
+        "y": 560,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "d3e10d825e639224",
+        "type": "change",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "temperature",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1100,
+        "y": 660,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "66623818a2d0a1c9",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "45",
+        "payloadType": "num",
+        "x": 870,
+        "y": 600,
+        "wires": [
+            [
+                "d3e10d825e639224"
+            ]
+        ]
+    },
+    {
+        "id": "0e92ea8f31225977",
+        "type": "comment",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Mandatory Settings",
+        "info": "Kp, Ki, Kd, and SP must be set every time the node is started before the Auto PID function can be activated.",
+        "x": 130,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "e7f576d0f62f7a04",
+        "type": "comment",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Commands",
+        "info": "Manual, Auto, and Disable control the PID function.",
+        "x": 150,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "9853a9655204abef",
+        "type": "comment",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Autotune",
+        "info": "Autotune starts the autotuning function, which sets the PID into Manual control and runs the autotune.",
+        "x": 160,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "43cb0e7f25a22071",
+        "type": "comment",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Send in Temp",
+        "info": "PV (temperature in this example) needs to be sent into the PID at a regular interval.",
+        "x": 150,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "061a08e65b87504b",
+        "type": "comment",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Initialize Temp",
+        "info": "Initializes the temperature global variable since this isn't a real sensor.",
+        "x": 850,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "b9d5bbbf9452fcb0",
+        "type": "debug",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Power",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 730,
+        "y": 720,
+        "wires": []
+    },
+    {
+        "id": "6fca3f159ce8afab",
+        "type": "debug",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Temperature",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "2413f918542bcf75",
+        "type": "inject",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "SP - B",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "30",
+        "topic": "setpoint",
+        "payload": "40",
+        "payloadType": "num",
+        "x": 160,
+        "y": 320,
+        "wires": [
+            [
+                "6a1f045eeeb9295c"
+            ]
+        ]
+    },
+    {
+        "id": "538aa14d1cbb7c11",
+        "type": "comment",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Toggle Derivative On Measurement",
+        "info": "Derivative on Measurement changes how the derivative term is calculated from using the derivative of the error term to the derivative of the input value. When the setpoint changes (without derivative on measurement) you will see \"derivative kick\" in the form of a rapid, sharp PID output value change and then back to a normal value. Toggling on Derivative on Measurement fixes this issue.",
+        "x": 500,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "a9828653bdf1506e",
+        "type": "comment",
+        "z": "9acdfaf1a6fa81fb",
+        "name": "Setpoint Change",
+        "info": "These two inject nodes alternate different setpoints to show you the difference with and without derivative on measurement. Normally, the setpoint changes would be a single inject node, a text or number input on the dashboard, or another node.",
+        "x": 140,
+        "y": 240,
+        "wires": []
+    }
+]

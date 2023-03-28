@@ -17,16 +17,23 @@ module.exports = function(RED) {
         var node = this;
 
         node.name = config.name || "PID";
-        node.sampleSec = parseFloat(config.sampleInterval) || 1;
-        node.outMin = parseFloat(config.outMin) || 0;
-        node.outMax = parseFloat(config.outMax) || 1;
-        node.disabledOut = parseFloat(config.disabledOut) || 0;
+        node.sampleSec = parseFloat(config.sampleInterval);
+        node.outMin = parseFloat(config.outMin);
+        node.outMax = parseFloat(config.outMax);
+        node.invert = 1;
+        if (node.outMax < node.outMin) {
+          node.invert = -1;
+          let tempMin = node.outMax;
+          node.outMax = node.outMin;
+          node.outMin = tempMin;
+        }
+        node.disabledOut = parseFloat(config.disabledOut);
         node.kp = null;
         node.ki = null;
         node.kd = null;
         node.sp = null;
-        node.PonM = config.PonM || false;
-        node.DonM = config.DonM || false;
+        node.PonM = config.PonM;
+        node.DonM = config.DonM;
 
         node.state = DISABLED;
 
@@ -81,7 +88,7 @@ module.exports = function(RED) {
           let dt = (now - (node._lastTime || 1e-16)) / 1000;
           if (dt < node.sampleSec) return node._lastOutput;
 
-          let error = node.sp - input;
+          let error = (node.sp - input) * node.invert;
           let dInput = input - (node._lastInput || input);
           let dError = error - (node._lastError || error);
 
