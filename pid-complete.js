@@ -31,14 +31,15 @@ module.exports = function(RED) {
         node.state = DISABLED;
 
 
-        function reset(integral = false) {
+        function reset(maintainIntegral = false) {
           node._proportional = 0;
-          if (!integral) node._integral = node.outMin;
+          node._integral = maintainIntegral ? node._lastOutput : node.disabledOut;
+          // node._integral = node.disabledOut;
           node._derivative = 0;
 
           node._lastTime = Date.now();
           node._lastInput = null;
-          node._lastOutput = node.disabledOut;
+          node._lastOutput = maintainIntegral ? node._lastOutput : node.disabledOut;
           node._lastError = null;
         }
 
@@ -57,7 +58,7 @@ module.exports = function(RED) {
           node.status({fill:"blue",text:"Manual"});
         }
 
-        function setAuto(output = null) {
+        function setAuto() {
           if (node.state != ENABLED_AUTO) {
 
             let maintainIntegral = true; //Default to maintaining integral from manual operation to maintain stable PV
@@ -66,7 +67,6 @@ module.exports = function(RED) {
             reset(maintainIntegral);
 
             if (node.kp != null && node.ki != null && node.kd != null && node.sp != null) {
-              node._integral = output ||  node._integral; //If the option output was specified, override the existing integral term
               node._integral = clamp(node._integral, node.outMin, node.outMax);
               node.state = ENABLED_AUTO;
               node.status({fill:"green", text:"Auto"});
@@ -152,9 +152,9 @@ module.exports = function(RED) {
 
           } else if (msg.hasOwnProperty("payload")) {
             if (node.state === ENABLED_AUTO) {
-              let tempOutput = parseFloat(msg.payload);
-              if (!isNaN(tempOutput)) {
-                calculate(tempOutput);
+              let tempPV = parseFloat(msg.payload);
+              if (!isNaN(tempPV)) {
+                calculate(tempPV);
               }
             }
           }

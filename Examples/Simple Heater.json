@@ -1,0 +1,390 @@
+[
+    {
+        "id": "ac0e97155ba74d84",
+        "type": "tab",
+        "label": "Flow 2",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "c4890cfbb4db55a1",
+        "type": "pid-complete",
+        "z": "ac0e97155ba74d84",
+        "name": "Heater PID",
+        "sampleInterval": 1,
+        "outMin": 0,
+        "outMax": "100",
+        "disabledOut": "0",
+        "PonM": false,
+        "x": 790,
+        "y": 540,
+        "wires": [
+            [
+                "7c98cca51226b091"
+            ]
+        ],
+        "info": "Output is +100 which signifies a heating PID."
+    },
+    {
+        "id": "d08082a1bb740989",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "0.1",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "0.5",
+        "topic": "",
+        "payload": "temperature",
+        "payloadType": "global",
+        "x": 380,
+        "y": 540,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ],
+        "info": "This is just inserting the current temp on a regular basis. It is pulling the current temp from a global variable which is set in simulation calculation function block."
+    },
+    {
+        "id": "2e414008bdccd93a",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "Kp",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "kp",
+        "payload": ".75",
+        "payloadType": "num",
+        "x": 410,
+        "y": 80,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ]
+    },
+    {
+        "id": "c92577d3b6ea981a",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "Ki",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "ki",
+        "payload": "0.00426",
+        "payloadType": "num",
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ]
+    },
+    {
+        "id": "0940de15ff5f2569",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "Kd",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "kd",
+        "payload": "8.2793",
+        "payloadType": "num",
+        "x": 410,
+        "y": 160,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ]
+    },
+    {
+        "id": "91bd58581721c365",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "SP",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "setpoint",
+        "payload": "60",
+        "payloadType": "num",
+        "x": 410,
+        "y": 200,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ]
+    },
+    {
+        "id": "7c98cca51226b091",
+        "type": "function",
+        "z": "ac0e97155ba74d84",
+        "name": "Oversimplified Heated Kettle",
+        "func": "let currentTemp = context.get(\"currentTemp\");\nlet currentPower = context.get(\"currentPower\");\nlet outterV = context.get(\"outterV\");\nlet outterSA = context.get(\"outterSA\");\nlet lastTime = context.get(\"lastTime\") || Date.now();\n\nlet ambientTemp = 10;\n\nlet now = Date.now();\nlet dT = (now - lastTime) / 1000; //seconds\n\nlet powerLostAmbient = 100 * outterSA * (currentTemp - ambientTemp);\nlet netPower = currentPower - powerLostAmbient;\n\nlet outletTemp = currentTemp + (netPower * dT) / (4.184 * outterV);\n\nif (msg.hasOwnProperty(\"payload\")) {\n    let tempPower = parseFloat(msg.payload);\n    if (!isNaN(tempPower)) currentPower = (tempPower / 100) * 10000; //100% power - 5000 W\n}\n\nlet outletMsg = {\n    payload: outletTemp\n};\n\n\noutletTemp = outletTemp > 100 ? 100 : outletTemp; //limit to boiling range\n\ncontext.set(\"currentTemp\", outletTemp);\ncontext.set(\"currentPower\", currentPower);\ncontext.set(\"lastTime\", now);\n\nreturn outletMsg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\n\n//surface area of pot of water\nlet outterV = 2000; //mL\nlet outterR = 1.5; //cm\nlet outterSA = 2 * (Math.PI * Math.pow(outterR, 3) + outterV) / outterR; //surface area of cylinder, cm3\noutterSA = outterSA / 10000; //cm2 to m2\n\ncontext.set(\"outterSA\", outterSA);\ncontext.set(\"outterV\", outterV);\n\ncontext.set(\"currentTemp\", 20); //°C\ncontext.set(\"currentPower\", 0); //percent",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 540,
+        "wires": [
+            [
+                "c64eb7d565d7747e"
+            ]
+        ]
+    },
+    {
+        "id": "64832e9f6e3e39ba",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "Auto",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "auto",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": ".5",
+        "topic": "",
+        "x": 410,
+        "y": 300,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ]
+    },
+    {
+        "id": "6f594380b55ea187",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "Manual",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "manual",
+                "vt": "str"
+            },
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "0.2",
+        "topic": "",
+        "payload": "50",
+        "payloadType": "num",
+        "x": 410,
+        "y": 340,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ]
+    },
+    {
+        "id": "5f257b4096167549",
+        "type": "pid-complete-autotune",
+        "z": "ac0e97155ba74d84",
+        "name": "PID Autotune",
+        "outDec": 0,
+        "outInc": "100",
+        "disabledOut": 0,
+        "rule": "pid",
+        "after": "auto",
+        "stepPercent": "10",
+        "x": 610,
+        "y": 540,
+        "wires": [
+            [
+                "c4890cfbb4db55a1"
+            ]
+        ],
+        "info": "PID autotune settings need to match settings in PID node."
+    },
+    {
+        "id": "a3102930325e2c88",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "Autotune",
+        "props": [
+            {
+                "p": "cmd",
+                "v": "autotune",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": "0.2",
+        "topic": "",
+        "x": 400,
+        "y": 440,
+        "wires": [
+            [
+                "5f257b4096167549"
+            ]
+        ]
+    },
+    {
+        "id": "c64eb7d565d7747e",
+        "type": "change",
+        "z": "ac0e97155ba74d84",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "temperature",
+                "pt": "global",
+                "to": "payload",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1340,
+        "y": 540,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "14de69ef8c74a3b0",
+        "type": "inject",
+        "z": "ac0e97155ba74d84",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "20",
+        "payloadType": "num",
+        "x": 1110,
+        "y": 480,
+        "wires": [
+            [
+                "c64eb7d565d7747e"
+            ]
+        ]
+    },
+    {
+        "id": "9a86780c8dd4155a",
+        "type": "comment",
+        "z": "ac0e97155ba74d84",
+        "name": "Mandatory Settings",
+        "info": "Kp, Ki, Kd, and SP must be set every time the node is started before the Auto PID function can be activated.",
+        "x": 370,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "87735a3e2dfb2d35",
+        "type": "comment",
+        "z": "ac0e97155ba74d84",
+        "name": "Commands",
+        "info": "Manual, Auto, and Disable control the PID function.",
+        "x": 390,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "3102b77ee37f8621",
+        "type": "comment",
+        "z": "ac0e97155ba74d84",
+        "name": "Autotune",
+        "info": "Autotune starts the autotuning function, which sets the PID into Manual control and runs the autotune.",
+        "x": 400,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "facb6616a209e680",
+        "type": "comment",
+        "z": "ac0e97155ba74d84",
+        "name": "Send in Temp",
+        "info": "PV (temperature in this example) needs to be sent into the PID at a regular interval.",
+        "x": 390,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "5b4a04477634a611",
+        "type": "comment",
+        "z": "ac0e97155ba74d84",
+        "name": "Initialize Temp",
+        "info": "Initializes the temperature global variable since this isn't a real sensor.",
+        "x": 1090,
+        "y": 440,
+        "wires": []
+    }
+]

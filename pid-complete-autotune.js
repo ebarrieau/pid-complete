@@ -31,7 +31,7 @@ module.exports = function(RED) {
         node.outDec = parseFloat(config.outDec) || 0;
         node.outInc = parseFloat(config.outInc) || 1;
         node.disabledOut = parseFloat(config.disabledOut) || 0;
-        node.rule = config.tuning || "ziegler-nichols";
+        node.rule = config.rule || "pi";
         node.after = config.after || "disabled";
         node.stepPercent = parseFloat(config.stepPercent) || 1;
 
@@ -186,7 +186,6 @@ module.exports = function(RED) {
                 if (!isNaN(tempOutput)) {
                   let ret = autoTune(tempOutput);
                   if (ret) {
-                    node.state = OFF;
                     let divisors = _tuning_rules[node.rule];
                     node.kp = node._Ku / divisors[0];
                     node.ki = node.kp / (node._Pu * divisors[1]);
@@ -214,6 +213,9 @@ module.exports = function(RED) {
                     if (newMsg.cmd === "manual") newMsg.payload = node.prevManual || node.disabledOut;
 
                     send(newMsg);
+
+                    stopAutotune(true);
+
                   } else {
                     let newMsg = {cmd: "manual", payload: node.output};
                     send(newMsg);
