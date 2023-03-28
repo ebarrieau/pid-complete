@@ -19,3 +19,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Portions of this software are based on software that is licensed under an MIT 
+license. The portions of this code that are derivative include, with minor 
+modifications, the "calculate" function of the pid-complete.js file. While no 
+license file is included in the source material, the copyright is reproduced 
+below from the README file:
+
+***************************************************************
+* Arduino PID Library - Version 1.2.1
+* by Brett Beauregard <br3ttb@gmail.com> brettbeauregard.com
+*
+* This Library is licensed under the MIT License
+***************************************************************
