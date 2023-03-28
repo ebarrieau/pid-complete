@@ -108,8 +108,10 @@ When the autotune completes successfully, the node sends a series of messages to
 4. Refactor your code to make it nice
 5. Make a pull request
 
-I will probably approve it ;)
+# License
+
+This software is licensed under an MIT license. Portions of this software are ported and modified from other works credited below which bear an MIT License and BSD license respectively. See the licenses folder of this repository for reproductions of the original licenses from the source material.
 
 # Credits
 
-Special thanks to Martin Lundberg https://github.com/m-lundberg/simple-pid and Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library and https://github.com/br3ttb/Arduino-PID-AutoTune-Library who's work this library is based on.
+Special thanks to Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library and https://github.com/br3ttb/Arduino-PID-AutoTune-Library who's work this library is based on.
