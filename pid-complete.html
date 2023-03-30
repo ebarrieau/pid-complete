@@ -9,7 +9,8 @@
       outMax: { value: 1 },
       disabledOut: { value: 0 },
       PonM: { value: false },
-      DonM: { value: false }
+      DonM: { value: false },
+      storage: { value: "" }
     },
     inputs: 1,
     outputs: 1,
@@ -18,8 +19,29 @@
     label: function () {
       return this.name || "pid-complete";
     },
+    oneditprepare: function() {
+      var contextStores = RED.settings.context.stores;
+
+      if (contextStores.length > 1) {
+        $("#node-input-storage").prop("disabled", false);
+
+        contextStores.forEach( (store) => {
+          $("#node-input-storage").append(`<option value="${store}">${store}</option>`);
+        })
+
+        $("#node-input-storage").val(this.storage).trigger("change");
+      }
+
+
+    },
+    oneditsave: function() {
+      this.context = $("#node-input-storage").find(":selected").val();
+    }
   });
+
+
 </script>
+
 
 <script type="text/html" data-template-name="pid-complete">
   <div class="form-row">
@@ -50,6 +72,13 @@
     <label style="width:auto" for="node-input-DonM" class="fa fa-arrow-right">Derivative on Measurement</label>
     <input type="checkbox" id="node-input-DonM"  style="display:inline-block; width:auto; vertical-align:top;" />
   </div>
+  <div class="form-row">
+    <label for="node-input-context"><i class="fa fa-database"></i> Setting Store</label>
+    <select id="node-input-storage" style="width:auto" disabled>
+      <option value="">Not Saved in Context</option>
+    </select>
+  </div>
+
 </script>
 
 <script type="text/html" data-help-name="pid-complete">

@@ -1,10 +1,9 @@
 {
-  "name": "node-red-contrib-pid-complete",
-  "version": "0.2.3",
+  "name": "@ebarrieau/pid-complete",
+  "repository": "https://github.com/ebarrieau/node-red-contrib-pid-complete",
+  "version": "0.3.0",
   "description": "A complete Node Red PID implementation.",
-  "scripts": {
-    "test": ""
-  },
+  "keywords": ["node-red", "PID"],
   "author": "Ethan Barrieau",
   "license": "MIT",
   "node-red" : {

@@ -28,6 +28,10 @@ module.exports = function(RED) {
           node.outMin = tempMin;
         }
         node.disabledOut = parseFloat(config.disabledOut);
+
+        node.storage = config.storage || null;
+        node.globalContext = node.context().global;
+
         node.kp = null;
         node.ki = null;
         node.kd = null;
@@ -36,6 +40,68 @@ module.exports = function(RED) {
         node.DonM = config.DonM;
 
         node.state = DISABLED;
+
+
+        node.get = function (prop) {
+          let output = undefined;
+          if (node.storage != null) {
+            let target = node.name.replace(/\s/g, "_") + "-" + prop;
+            output =  node.globalContext.get(target, node.storage);
+          }
+          return output;
+        }
+
+        node.getKp = function() {
+          let output = node.get("kp");
+          output = output != undefined ? output : node.kp;
+          return output
+        }
+
+        node.getKi = function() {
+          let output = node.get("ki");
+          output = output != undefined ? output : node.ki;
+          return output
+        }
+
+        node.getKd = function() {
+          let output = node.get("kd");
+          output = output != undefined ? output : node.kd;
+          return output
+        }
+
+        // node.getSp = function() {
+        //   let output = node.get("sp");
+        //   output = output != undefined ? output : node.sp;
+        //   return output
+        // }
+
+        node.set = function (prop, val) {
+          if (node.storage != null) {
+            let target = node.name.replace(/\s/g, "_") + "-" + prop;
+            node.globalContext.set(target, val, node.storage);
+          }
+        }
+
+        node.setKp = function(val) {
+          node.set("kp", val);
+          node.kp = val;
+        }
+
+        node.setKi = function(val) {
+          node.set("ki", val);
+          node.ki = val;
+        }
+
+        node.setKd = function(val) {
+          node.set("kd", val);
+          node.kd = val;
+        }
+
+        // node.setSp = function(val) {
+        //   node.set("sp", val);
+        //   node.sp = val;
+        // }
+
 
 
         function reset(maintainIntegral = false) {
@@ -73,7 +139,7 @@ module.exports = function(RED) {
 
             reset(maintainIntegral);
 
-            if (node.kp != null && node.ki != null && node.kd != null && node.sp != null) {
+            if (node.getKp() != null && node.getKi() != null && node.getKd() != null && node.sp != null) {
               node._integral = clamp(node._integral, node.outMin, node.outMax);
               node.state = ENABLED_AUTO;
               node.status({fill:"green", text:"Auto"});
@@ -93,18 +159,18 @@ module.exports = function(RED) {
           let dError = error - (node._lastError || error);
 
           if (node.PonM) {
-            node._proportional -= node.kp * dInput;
+            node._proportional -= node.getKp() * dInput;
           } else {
-            node._proportional = node.kp * error;
+            node._proportional = node.getKp() * error;
           }
 
-          node._integral += node.ki * error * dt;
+          node._integral += node.getKi() * error * dt;
           node._integral = clamp(node._integral, node.outMin, node.outMax);
 
           if (node.DonM) {
-            node._derivative = -1 * node.kd * dInput;
+            node._derivative = -1 * node.getKd() * dInput;
           } else {
-            node._derivative = node.kd * dError;
+            node._derivative = node.getKd() * dError;
           }
 
           let output = node._proportional + node._integral + node._derivative;
@@ -143,16 +209,17 @@ module.exports = function(RED) {
               switch (msg.topic) {
                 case "setpoint":
                 case "sp":
+                  // node.setSp(parseFloat(msg.payload));
                   node.sp = parseFloat(msg.payload);
                   break;
                 case "kp":
-                  node.kp = parseFloat(msg.payload);
+                  node.setKp(parseFloat(msg.payload));
                   break;
                 case "ki":
-                  node.ki = parseFloat(msg.payload);
+                  node.setKi(parseFloat(msg.payload));
                   break;
                 case "kd":
-                  node.kd = parseFloat(msg.payload);
+                  node.setKd(parseFloat(msg.payload));
                   break;
               }
             }
