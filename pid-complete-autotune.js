@@ -138,7 +138,7 @@ module.exports = function(RED) {
               //Date.now() returns milliseconds, divide by 1000 to get period in seconds
               node._Pu = period / 1000.0;
 
-              console.log("Ku: " + node._Ku + " Pu: " + node._Pu);
+              // console.log("Ku: " + node._Ku + " Pu: " + node._Pu);
 
               ret = true;
 
@@ -197,7 +197,7 @@ module.exports = function(RED) {
                       send(tuning);
                     });
 
-                    console.log(node.kp, node.ki, node.kd);
+                    // console.log(node.kp, node.ki, node.kd);
 
                     let newMsg = {};
                     switch (node.after) {

@@ -10,7 +10,12 @@
       disabledOut: { value: 0 },
       PonM: { value: false },
       DonM: { value: false },
-      storage: { value: "" }
+      kp: { value: "1" },
+      kpType: { value: "num" },
+      ki: { value: "1" },
+      kiType: { value: "num" },
+      kd: { value: "1" },
+      kdType: { value: "num" }
     },
     inputs: 1,
     outputs: 1,
@@ -20,22 +25,45 @@
       return this.name || "pid-complete";
     },
     oneditprepare: function() {
-      var contextStores = RED.settings.context.stores;
 
-      if (contextStores.length > 1) {
-        $("#node-input-storage").prop("disabled", false);
+      $("#node-input-name").typedInput({
+        types: ["str"]
+      });
 
-        contextStores.forEach( (store) => {
-          $("#node-input-storage").append(`<option value="${store}">${store}</option>`);
-        })
+      $("#node-input-sampleInterval").typedInput({
+        types: ["num"]
+      });
 
-        $("#node-input-storage").val(this.storage).trigger("change");
-      }
+      $("#node-input-outMin").typedInput({
+        types: ["num"]
+      });
 
+      $("#node-input-outMax").typedInput({
+        types: ["num"]
+      });
 
-    },
-    oneditsave: function() {
-      this.context = $("#node-input-storage").find(":selected").val();
+      $("#node-input-disabledOut").typedInput({
+        types: ["num"]
+      });
+
+      $("#node-input-kp").typedInput({
+        type: "num",
+        types: ["num", "flow", "global"],
+        typeField: "#node-input-kpType"
+      });
+
+      $("#node-input-ki").typedInput({
+        type: "num",
+        types: ["num", "flow", "global"],
+        typeField: "#node-input-kiType"
+      });
+
+      $("#node-input-kd").typedInput({
+        type: "num",
+        types: ["num", "flow", "global"],
+        typeField: "#node-input-kdType"
+      });
+
     }
   });
 
@@ -44,39 +72,50 @@
 
 
 <script type="text/html" data-template-name="pid-complete">
+
   <div class="form-row">
     <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
     <input type="text" id="node-input-name" placeholder="Name" />
   </div>
   <div class="form-row">
-    <label for="node-input-sampleInterval">Calculation Interval (s)</label>
-    <input type="number" step="any" id="node-input-sampleInterval" style="width:70%;" />
+    <label for="node-input-kp">Kp</label>
+    <input type="text" id="node-input-kp" />
+    <input type="hidden" id="node-input-kpType" />
   </div>
   <div class="form-row">
-    <label for="node-input-outMin">Decreasing Output Value</label>
-    <input type="number" step="any" id="node-input-outMin" style="width:70%;" />
+    <label for="node-input-ki">Ki</label>
+    <input type="text" id="node-input-ki" />
+    <input type="hidden" id="node-input-kiType" />
   </div>
   <div class="form-row">
-    <label for="node-input-outMax">Increasing Output Value</label>
-    <input type="number" step="any" id="node-input-outMax" style="width:70%;" />
+    <label for="node-input-kd">Kd</label>
+    <input type="text" id="node-input-kd" />
+    <input type="hidden" id="node-input-kdType" />
   </div>
   <div class="form-row">
-    <label for="node-input-disabledOut">Output When Disabled</label>
-    <input type="number" step="any" id="node-input-disabledOut" style="width:70%;" />
+    <label for="node-input-outMin">Min Output</label>
+    <input type="text" id="node-input-outMin" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-outMax">Max Output</label>
+    <input type="text" id="node-input-outMax" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-sampleInterval">Calc. Interval (s)</label>
+    <input type="text" id="node-input-sampleInterval" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-disabledOut">Disabled Output</label>
+    <input type="text" id="node-input-disabledOut" />
   </div>
   <div class="form-row">
     <label style="width:auto" for="node-input-PonM" class="fa fa-arrow-right">Proportional on Measurement</label>
     <input type="checkbox" id="node-input-PonM"  style="display:inline-block; width:auto; vertical-align:top;"/>
   </div>
+
   <div class="form-row">
     <label style="width:auto" for="node-input-DonM" class="fa fa-arrow-right">Derivative on Measurement</label>
     <input type="checkbox" id="node-input-DonM"  style="display:inline-block; width:auto; vertical-align:top;" />
-  </div>
-  <div class="form-row">
-    <label for="node-input-context"><i class="fa fa-database"></i> Persistent Context Store</label>
-    <select id="node-input-storage" style="width:auto" disabled>
-      <option value="">Not Saved in Context</option>
-    </select>
   </div>
 
 </script>

@@ -21,12 +21,26 @@ module.exports = function(RED) {
         node.sampleSec = parseFloat(config.sampleInterval);
         node.outMin = parseFloat(config.outMin);
         node.outMax = parseFloat(config.outMax);
+        node.disabledOut = parseFloat(config.disabledOut);
         node.PonM = config.PonM;
         node.DonM = config.DonM;
 
+        node.kpName = config.kp;
+        node.kpType = config.kpType;
+        node.kiName = config.ki;
+        node.kiType = config.kiType;
+        node.kdName = config.kd;
+        node.kdType = config.kdType;
+
+        node.kp = null;
+        node.ki = null;
+        node.kd = null;
+        node.sp = null;
+
         let configError = [node.sampleSec,
                            node.outMin,
-                           node.outMax].some( (element) => {
+                           node.outMax,
+                           node.disabledOut].some( (element) => {
                              return isNaN(element);
                            });
 
@@ -39,58 +53,47 @@ module.exports = function(RED) {
           node.outMax = node.outMin;
           node.outMin = tempMin;
         }
-        node.disabledOut = parseFloat(config.disabledOut);
-
-        node.storage = config.storage || null;
-        node.globalContext = node.context().global;
-
-        node.kp = null;
-        node.ki = null;
-        node.kd = null;
-        node.sp = null;
 
         node.state = configError ? ERROR : DISABLED;
 
-
-        // Default the return value to undefined so that this function returns
-        // undefined if there is no matching setting in the context store or
-        // if the context store is not set in the node configuration
-
-        node.get = function (prop) {
+        node.get = function (prop, type, gain) {
           let output = undefined;
-          if (node.storage != null) {
-            let target = node.name.replace(/\s/g, "_") + "-" + prop;
-            output =  node.globalContext.get(target, node.storage);
+          switch (type) {
+            case "global":
+              output = node.context().global.get(prop);
+              break;
+            case "flow":
+              output = node.context().flow.get(prop);
+              break;
           }
-          return output;
+          if (output != undefined && isFinite(output) && !isNaN(output)) {
+            node[gain] = output;
+          }
         }
 
-        // Helper get functions which return either a valid output from the
-        // context store or the value stored in the internal variable
-
-        node.getKp = function() {
-          let output = node.get("kp");
-          output = output != undefined ? output : node.kp;
-          return output
+        node.updateKp = function() {
+          node.get(node.kpName, node.kpType, "kp");
         }
 
-        node.getKi = function() {
-          let output = node.get("ki");
-          output = output != undefined ? output : node.ki;
-          return output
+        node.updateKi = function() {
+          node.get(node.kiName, node.kiType, "ki");
         }
 
-        node.getKd = function() {
-          let output = node.get("kd");
-          output = output != undefined ? output : node.kd;
-          return output
+        node.updateKd = function() {
+          node.get(node.kdName, node.kdType, "kd");
         }
 
-
-        node.set = function (prop, val) {
-          if (node.storage != null) {
-            let target = node.name.replace(/\s/g, "_") + "-" + prop;
-            node.globalContext.set(target, val, node.storage);
+        node.set = function (prop, type, gain, val) {
+          if (val != undefined && isFinite(val) && !isNaN(val)) {
+            node[gain] = val;
+            switch (type) {
+              case "global":
+                node.context().global.set(prop, val);
+                break;
+              case "flow":
+                output = node.context().flow.set(prop, val);
+                break;
+            }
           }
         }
 
@@ -98,43 +101,39 @@ module.exports = function(RED) {
         // store if one is set and to the internal variable
 
         node.setSp = function(val) {
-          let tempVal = parseFloat(val);
-          if (!isNaN(tempVal)) {
-            // node.set("sp", val);
-            node.sp = val;
-          }
+          node.set(null, null, "sp", val);
         }
 
         node.setKp = function(val) {
-          let tempVal = parseFloat(val);
-          if (!isNaN(tempVal)) {
-            node.set("kp", val);
-            node.kp = val;
-          }
+          node.set(node.kpName, node.kpType, "kp", val)
         }
 
         node.setKi = function(val) {
-          let tempVal = parseFloat(val);
-          if (!isNaN(tempVal)) {
-            node.set("ki", val);
-            node.ki = val;
-          }
+          node.set(node.kiName, node.kiType, "ki", val)
         }
 
         node.setKd = function(val) {
-          let tempVal = parseFloat(val);
-          if (!isNaN(tempVal)) {
-            node.set("kd", val);
-            node.kd = val;
+          node.set(node.kdName, node.kdType, "kd", val)
+        }
+
+        //Call the update functions once to initialize the tuning variables if
+        //context storage is used and there is valid data in context
+        let initializeGain = function(prop, type, getFn, setFn) {
+          if (type === "num") {
+            setFn(prop);
+          } else {
+            getFn();
           }
         }
 
+        initializeGain(node.kpName, node.kpType, node.updateKp, node.setKp);
+        initializeGain(node.kiName, node.kiType, node.updateKi, node.setKi);
+        initializeGain(node.kdName, node.kdType, node.updateKd, node.setKd);
 
 
         function reset(maintainIntegral = false) {
           node._proportional = 0;
           node._integral = maintainIntegral ? node._integral : node.disabledOut;
-          // node._integral = node.disabledOut;
           node._derivative = 0;
 
           node._lastTime = Date.now();
@@ -171,7 +170,7 @@ module.exports = function(RED) {
 
             reset(maintainIntegral);
 
-            if (node.getKp() != null && node.getKi() != null && node.getKd() != null && node.sp != null) {
+            if (node.kp != null && node.ki != null && node.kd != null && node.sp != null) {
               node._integral = clamp(node._integral, node.outMin, node.outMax);
               node.state = ENABLED_AUTO;
               node.status({fill:"green", text:"Auto"});
@@ -191,18 +190,18 @@ module.exports = function(RED) {
           let dError = error - (node._lastError || error);
 
           if (node.PonM) {
-            node._proportional -= node.getKp() * dInput;
+            node._proportional -= node.kp * dInput;
           } else {
-            node._proportional = node.getKp() * error;
+            node._proportional = node.kp * error;
           }
 
-          node._integral += node.getKi() * error * dt;
+          node._integral += node.ki * error * dt;
           node._integral = clamp(node._integral, node.outMin, node.outMax);
 
           if (node.DonM) {
-            node._derivative = -1 * node.getKd() * dInput;
+            node._derivative = -1 * node.kd * dInput;
           } else {
-            node._derivative = node.getKd() * dError;
+            node._derivative = node.kd * dError;
           }
 
           let output = node._proportional + node._integral + node._derivative;
@@ -258,7 +257,10 @@ module.exports = function(RED) {
           } else if (msg.hasOwnProperty("payload")) {
             if (node.state === ENABLED_AUTO) {
               let tempPV = parseFloat(msg.payload);
-              if (!isNaN(tempPV)) {
+              if (tempPV != undefined && isFinite(tempPV) && !isNaN(tempPV)) {
+                node.updateKp();
+                node.updateKi();
+                node.updateKd();
                 calculate(tempPV);
               }
             }

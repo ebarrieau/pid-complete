@@ -1,7 +1,6 @@
 {
   "name": "@ebarrieau/pid-complete",
-  "repository": "https://github.com/ebarrieau/node-red-contrib-pid-complete",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A complete Node Red PID implementation.",
   "keywords": [
     "node-red",
