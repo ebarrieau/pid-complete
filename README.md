@@ -72,7 +72,7 @@ This node should wire directly between all of your inputs and the PID node. This
 5. Repeat steps 3-4 twice while recording the time and value of the max and min PV during each high and low peak
 6. Calculate the PID parameters
 
-Basic PID tuning uses two parameters and a set of tuning rules to calculate the three gains. The parameters are the ultimate gain and the ultimate period. These can be found manually by setting **ki** and **kd** to 0 and slowing increasing **kp** until the PV just starts to oscillate, that is your ultimate gain (ku). You can then measure the period of the oscillations, that is your ultimate period (pu). This autotune node does a simpler test which forces oscillations manually and then measures the commanded amplitude of oscilations vs the actual recorded amplitude and the period of oscillations. This method is not perfect and it is not fast, but is a good starting point to manually tweak your settings. The PID gains are then calculated by using the below tuning rules and equations.
+Basic PID tuning uses two parameters and a set of tuning rules to calculate the three gains. The parameters are the ultimate gain and the ultimate period. These can be found manually by setting **ki** and **kd** to 0 and slowly increasing **kp** until the PV just starts to oscillate, that is your ultimate gain (ku). You can then measure the period of the oscillations, that is your ultimate period (pu). This autotune node does a simpler test which forces oscillations manually and then measures the commanded amplitude of oscillations vs the actual recorded amplitude and the period of oscillations. This method is not perfect and it is not fast, but is a good starting point to manually tweak your settings. The PID gains are then calculated by using the below tuning rules and equations.
 
 | Rule                   | kp         | ki                | kd                 |
 | ---------------------- | ---------- |------------------ |--------------------|
@@ -116,8 +116,10 @@ When the autotune completes successfully, the node sends a series of messages to
 4. Refactor your code to make it nice
 5. Make a pull request
 
-I will probably approve it ;)
+# License
+
+This software is licensed under an MIT license. Portions of this software are ported and modified from other works credited below which bear an MIT License and BSD license respectively. See the licenses folder of this repository for reproductions of the original licenses from the source material.
 
 # Credits
 
-Special thanks to Martin Lundberg https://github.com/m-lundberg/simple-pid and Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library and https://github.com/br3ttb/Arduino-PID-AutoTune-Library who's work this library is based on.
+Special thanks to Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library and https://github.com/br3ttb/Arduino-PID-AutoTune-Library who's work this library is based on.
