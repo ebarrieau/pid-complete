@@ -28,7 +28,7 @@ module.exports = function(RED) {
                            node.outMin,
                            node.outMax].some( (element) => {
                              return isNaN(element);
-                           };
+                           });
 
         node.invert = 1; //Default to not inverting the controller action
         if (node.outMax < node.outMin) {
@@ -101,7 +101,7 @@ module.exports = function(RED) {
           let tempVal = parseFloat(val);
           if (!isNaN(tempVal)) {
             // node.set("sp", val);
-            node.kp = val;
+            node.sp = val;
           }
         }
 
