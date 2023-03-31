@@ -9,6 +9,7 @@ let clamp = function(val, low, high) {
 const DISABLED = Symbol();
 const ENABLED_MANUAL = Symbol();
 const ENABLED_AUTO = Symbol();
+const ERROR = Symbol();
 
 
 module.exports = function(RED) {
@@ -20,8 +21,19 @@ module.exports = function(RED) {
         node.sampleSec = parseFloat(config.sampleInterval);
         node.outMin = parseFloat(config.outMin);
         node.outMax = parseFloat(config.outMax);
-        node.invert = 1;
+        node.PonM = config.PonM;
+        node.DonM = config.DonM;
+
+        let configError = [node.sampleSec,
+                           node.outMin,
+                           node.outMax].some( (element) => {
+                             return isNaN(element);
+                           };
+
+        node.invert = 1; //Default to not inverting the controller action
         if (node.outMax < node.outMin) {
+          // Controller action is reverse (e.g. cooling or braking) so swap
+          // the output ranges and set the invert flag to -1
           node.invert = -1;
           let tempMin = node.outMax;
           node.outMax = node.outMin;
@@ -36,11 +48,13 @@ module.exports = function(RED) {
         node.ki = null;
         node.kd = null;
         node.sp = null;
-        node.PonM = config.PonM;
-        node.DonM = config.DonM;
 
-        node.state = DISABLED;
+        node.state = configError ? ERROR : DISABLED;
 
+
+        // Default the return value to undefined so that this function returns
+        // undefined if there is no matching setting in the context store or
+        // if the context store is not set in the node configuration
 
         node.get = function (prop) {
           let output = undefined;
@@ -50,6 +64,9 @@ module.exports = function(RED) {
           }
           return output;
         }
+
+        // Helper get functions which return either a valid output from the
+        // context store or the value stored in the internal variable
 
         node.getKp = function() {
           let output = node.get("kp");
@@ -69,11 +86,6 @@ module.exports = function(RED) {
           return output
         }
 
-        // node.getSp = function() {
-        //   let output = node.get("sp");
-        //   output = output != undefined ? output : node.sp;
-        //   return output
-        // }
 
         node.set = function (prop, val) {
           if (node.storage != null) {
@@ -82,31 +94,46 @@ module.exports = function(RED) {
           }
         }
 
+        // Helper functions to save the current values to both the context
+        // store if one is set and to the internal variable
+
+        node.setSp = function(val) {
+          let tempVal = parseFloat(val);
+          if (!isNaN(tempVal)) {
+            // node.set("sp", val);
+            node.kp = val;
+          }
+        }
+
         node.setKp = function(val) {
-          node.set("kp", val);
-          node.kp = val;
+          let tempVal = parseFloat(val);
+          if (!isNaN(tempVal)) {
+            node.set("kp", val);
+            node.kp = val;
+          }
         }
 
         node.setKi = function(val) {
-          node.set("ki", val);
-          node.ki = val;
+          let tempVal = parseFloat(val);
+          if (!isNaN(tempVal)) {
+            node.set("ki", val);
+            node.ki = val;
+          }
         }
 
         node.setKd = function(val) {
-          node.set("kd", val);
-          node.kd = val;
+          let tempVal = parseFloat(val);
+          if (!isNaN(tempVal)) {
+            node.set("kd", val);
+            node.kd = val;
+          }
         }
-
-        // node.setSp = function(val) {
-        //   node.set("sp", val);
-        //   node.sp = val;
-        // }
 
 
 
         function reset(maintainIntegral = false) {
           node._proportional = 0;
-          node._integral = maintainIntegral ? node._lastOutput : node.disabledOut;
+          node._integral = maintainIntegral ? node._integral : node.disabledOut;
           // node._integral = node.disabledOut;
           node._derivative = 0;
 
@@ -123,9 +150,14 @@ module.exports = function(RED) {
         }
 
         function setManual(output = null) {
+          let tempLastOutput = node._lastOutput;
           reset(false); //Do not need to save integral term, will be overwritten by manual output
-          node._lastOutput = output || node._lastOutput;
-          node._lastOutput = clamp(node._lastOutput, node.outMin, node.outMax);
+          if (output != null && !isNaN(output)) {
+            node._lastOutput = output;
+          } else {
+            node._lastOutput = tempLastOutput;
+          }
+
           node._integral = node._lastOutput
           node.state = ENABLED_MANUAL;
           node.status({fill:"blue",text:"Manual"});
@@ -209,17 +241,16 @@ module.exports = function(RED) {
               switch (msg.topic) {
                 case "setpoint":
                 case "sp":
-                  // node.setSp(parseFloat(msg.payload));
-                  node.sp = parseFloat(msg.payload);
+                  node.setSp(msg.payload);
                   break;
                 case "kp":
-                  node.setKp(parseFloat(msg.payload));
+                  node.setKp(msg.payload);
                   break;
                 case "ki":
-                  node.setKi(parseFloat(msg.payload));
+                  node.setKi(msg.payload);
                   break;
                 case "kd":
-                  node.setKd(parseFloat(msg.payload));
+                  node.setKd(msg.payload);
                   break;
               }
             }
@@ -235,7 +266,8 @@ module.exports = function(RED) {
 
           let newMsg = {
                         name: node.name,
-                        payload: node._lastOutput
+                        //this line ensures that no output value will fall outside the max and min allowable range
+                        payload: clamp(node._lastOutput, node.outMin, node.outMax)
                       };
 
           switch (node.state) {
@@ -251,6 +283,8 @@ module.exports = function(RED) {
               newMsg.integral = node._integral;
               newMsg.derivative = node._derivative;
               break;
+            case ERROR:
+              newMsg.state = "Config Error";
           }
 
           send(newMsg);

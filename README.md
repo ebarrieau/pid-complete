@@ -1,6 +1,6 @@
-# node-red-contrib-pid-complete
+# pid-complete
 
-A node-red node to perform PID Calculations.
+A node-red node to perform PID Calculations and autotuning.
 
 # Getting started
 
@@ -10,13 +10,13 @@ This node is under active development and may have lots of bugs and breaking cha
 
 This node is a PID controller that is easy to implement into your flow, but gives you enough options to control complex systems. This implementation uses the parallel (ideal) form of the PID equation instead of the classical form. This means that the system uses three gains (kp, ki, and kd) as opposed to one gain and two times (kp, ti, and td) - this is a design choice of this library.
 
-The setpoint and PID gains are not saved across restarts, so you must initialize these variables in your flow before starting the node or you will get an error.
+If you setup your Node Red context stores to have at least one store saved to the filesystem, you can configure the PID node save it's gains in global context that is saved across re-deploys and re-boots. Setting up a persistent context store is not required to use this library, but without persistent storage, you must initialize **kp**, **ki**, and **kd** on every re-deploy or re-boot.
 
 ### Inputs
 
-1. `msg.payload` - must contain the input process variable (PV) unless a command is send or valid topic is set.
+1. `msg.payload` - must contain the input process variable (PV) unless a command is sent or valid topic is set.
 2. `msg.cmd` - can contain **reset**, **disable**, **auto**, or **manual**.
-3. `msg.topic` - can contain no topic or **sp** with the new setpoint in the `msg.payload`, **kp** with the new proportional gain in `msg.payload`, **ki** with the new integral gain in `msg.payload`, or **kd** with the new derivative gain in `msg.payload`.
+3. `msg.topic` - can contain no topic or can contain **sp**, **kp**, **ki**, or **kd** with the new setpoint or gain setting in `msg.payload`.
 
 ### Output
 
@@ -32,24 +32,32 @@ The setpoint and PID gains are not saved across restarts, so you must initialize
 | ----------------------------- | ---------------------------------------------------------------------------------|
 | *Name*                        | Whatever you name the node. Will be used as topic of node output.               |
 | *Calculation Interval*        | Time between calculations. If set faster than inject interval, node will calculate new input on every inject. If set slower than inject interval, node will wait until next inject after calculation interval has elapsed. Set this long if changing the control output quickly would damage the system (e.g. valve packing wearing out from quick control oscillations)    |
-| *Max Output - Decreasing PV*  | Sets the largest control ouput that produces a decreasing PV.                    |
-| *Max Output - Increasing PV*  | Sets the largest control output that produces an increasing PV.                  |
+| *Max Output - Decreasing PV*  | Sets the largest control output that produces a decreasing PV. Can be any number, positive or negative. |
+| *Max Output - Increasing PV*  | Sets the largest control output that produces an increasing PV. Can be any number, positive or negative. |
 | *Output When Disabled*        | Default control output when in Disabled mode.                                    |
 | *Proportional on Measurement* | Calculates proportional term from measurement instead of from error.             |
 | *Derivative on Measurement*   | Calculates derivative term from measurement instead of from error.               |
+| *Persistent Context Store*    | The name of the context store that is configured for filesystem storage.         |
+
+
+### Context Store Setup
+
+If you want to setup persistent storage across re-deploys, you need to change your Node-Red settings.js file to set up a filesystem based context store. Instructions can be found at https://nodered.org/docs/user-guide/context#using-multiple-context-stores.
 
 <details>
 <summary>Advanced Details</summary>
 
 When setting `msg.cmd` to **manual**, you can either include the desired manual output to `msg.payload` or you can leave it empty which will set the manual output to the last output. The last output value is either the last calculated PID value when in **auto** mode or *Output When Disabled* when in **disable** mode.
 
-When setting `msg.cmd` to **auto** when currently in **manual**, the manual output will be set into the integral term to provide bumpless transition. If `msg.cmd` is set to **auto** while currently in **auto** mode, the integral term will not be reset. THe only way to reset the integral term is to either set `msg.cmd` to **reset** or cycle the node into **disable** then back to **auto** which will reset the integral term to *Output When Disabled*. To change the manual setpoint, you must resend `msg.cmd` with **manual** and the desired output in `msg.payload`.
+When setting `msg.cmd` to **auto** when currently in **manual**, the manual output will be set into the integral term to provide bumpless transition. If `msg.cmd` is set to **auto** while currently in **auto** mode, the integral term will not be reset. The only way to reset the integral term is to either set `msg.cmd` to **reset** or cycle the node into **disable** then back to **auto** which will reset the integral term to *Output When Disabled*. To change the manual setpoint, you must resend `msg.cmd` with **manual** and the desired output in `msg.payload`.
 
 Setting `msg.cmd` to **reset** will reset the integral term, but will not change the current mode.
 
 Note that the Proportional, Integral, and Derivative outputs only send values when in **auto** mode. You do not need to keep track of these values, but they can be useful for visualization and tuning purposes.
 
-For many applications, including heating applications, *Max Output - Decreasing PV* will be set to 0 and *Max Output - Increasing PV* will be set to the maximum safe output value. For other applications, including cooling applications, the *Max Output - Increasing PV* will be 0 and *Max Output - Decreasing PV* will be the maximum safe output value. For applications that heat and cool, it is common to set a positive and negative range centered at 0. In this case you would separate the positive from negative value outside of the PID node.
+For many applications, including heating applications, *Max Output - Decreasing PV* will be set to 0 and *Max Output - Increasing PV* will be set to the maximum safe output value. For other applications, including cooling applications, the *Max Output - Increasing PV* will be 0 and *Max Output - Decreasing PV* will be the maximum safe output value. For applications that heat and cool, it is common to set a positive and negative range centered at 0. In this case you would separate the positive from negative value outside of the PID node. These are just recommendations and you can choose any arbitrary range that makes your system work.
+
+This node guarantees that the value sent in output will never fall outside of the range set by *Max Output - Decreasing PV* and *Max Output - Increasing PV* regardless of what mode of operation it is in. A commanded manual setpoint outside of the range will be capped at the closest allowable value.
 
 </details>
 
@@ -108,10 +116,8 @@ When the autotune completes successfully, the node sends a series of messages to
 4. Refactor your code to make it nice
 5. Make a pull request
 
-# License
-
-This software is licensed under an MIT license. Portions of this software are ported and modified from other works credited below which bear an MIT License and BSD license respectively. See the licenses folder of this repository for reproductions of the original licenses from the source material.
+I will probably approve it ;)
 
 # Credits
 
-Special thanks to Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library and https://github.com/br3ttb/Arduino-PID-AutoTune-Library who's work this library is based on.
+Special thanks to Martin Lundberg https://github.com/m-lundberg/simple-pid and Brett Beauregard https://github.com/br3ttb/Arduino-PID-Library and https://github.com/br3ttb/Arduino-PID-AutoTune-Library who's work this library is based on.
