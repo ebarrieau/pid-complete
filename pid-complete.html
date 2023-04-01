@@ -4,17 +4,86 @@
     color: "#FFCC66",
     defaults: {
       name: { value: "PID" },
-      sampleInterval: { value: 1 },
-      outMin: { value: 0 },
-      outMax: { value: 1 },
-      disabledOut: { value: 0 },
+      sampleInterval: { value: 1, validate: RED.validators.number() },
+      outMin: { value: 0, validate: (v, opt) => {
+          if (RED.validators.number(v) && (v != $("#node-input-outMax").val())) {
+            return true;
+          }
+          if (opt) {
+            return "Min and Max output cannot be the same";
+          }
+        }
+      },
+      outMax: { value: 1, validate: (v, opt) => {
+          if (RED.validators.number(v) && (v != $("#node-input-outMin").val())) {
+            return true;
+          }
+          if (opt) {
+            return "Min and Max output cannot be the same";
+          }
+        }
+      },
+      disabledOut: { value: 0, validate: (v, opt) => {
+          let outMin = $("#node-input-outMin").val();
+          let outMax = $("#node-input-outMax").val();
+          let action =  outMin < outMax ? true : false;
+          let result = false;
+          if (action) {
+            result = (v >= outMin) && (v <= outMax);
+          } else {
+            result = (v >= outMax) && (v <= outMin);
+          }
+          if (result) {
+            return result;
+          }
+          if (opt) {
+            return "Disabled output not within Min and Max output";
+          }
+        }
+      },
       PonM: { value: false },
       DonM: { value: false },
-      kp: { value: "1" },
+      kp: { value: "1", validate:(v,opt) => {
+          if ($("#node-input-kpType").val() == "num") {
+            if (RED.validators.number(v)) {
+              return true;
+            }
+            if (opt) {
+              return "Kp input not a valid number";
+            }
+          } else {
+            return true;
+          }
+        }
+      },
       kpType: { value: "num" },
-      ki: { value: "1" },
+      ki: { value: "0", validate:(v,opt) => {
+          if ($("#node-input-kiType").val() == "num") {
+            if (RED.validators.number(v)) {
+              return true;
+            }
+            if (opt) {
+              return "Ki input not a valid number";
+            }
+          }else {
+            return true;
+          }
+        }
+      },
       kiType: { value: "num" },
-      kd: { value: "1" },
+      kd: { value: "0", validate:(v,opt) => {
+          if ($("#node-input-kdType").val() == "num") {
+            if (RED.validators.number(v)) {
+              return true;
+            }
+            if (opt) {
+              return "Kd input not a valid number";
+            }
+          } else {
+            return true;
+          }
+        }
+      },
       kdType: { value: "num" }
     },
     inputs: 1,
